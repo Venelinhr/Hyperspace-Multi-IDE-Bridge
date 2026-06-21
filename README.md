@@ -1,3 +1,5 @@
+![Hyperspace Bridge](assets/cover.png)
+
 # Hyperspace Bridge
 
 > Connect **Cursor**, **Antigravity IDE**, and **Zed** to Claude via your local **Hyperspace (Hai) proxy** — with live web search and full coding capabilities.
