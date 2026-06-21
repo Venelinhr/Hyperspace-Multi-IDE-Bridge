@@ -1,6 +1,6 @@
 # Hyperspace Bridge
 
-> Connect **Cursor**, **Antigravity IDE**, and **Zed** to Claude via your local **Hyperspace (Hai) proxy** — with live web search, full coding capabilities, and a green status indicator that shows when you're connected.
+> Connect **Cursor**, **Antigravity IDE**, and **Zed** to Claude via your local **Hyperspace (Hai) proxy** — with live web search and full coding capabilities.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![macOS](https://img.shields.io/badge/macOS-13%2B-brightgreen)](https://www.apple.com/macos/)
@@ -93,6 +93,8 @@ Both Antigravity IDE and Cursor **hard-wire their built-in AI to their own cloud
 
 ## Quick Start
 
+### Install
+
 ```bash
 # 1. Clone this repository
 git clone https://github.com/Venelinhr/Hyperspace-Multi-IDE-Bridge.git
@@ -102,9 +104,28 @@ cd Hyperspace-Multi-IDE-Bridge
 ./install.sh
 
 # 3. Open your IDE and start chatting
-#    Cursor / Antigravity: press ⌘L or ⌘⇧L
-#    Zed: press ⌘?
+#    Cursor / Antigravity: press ⌘L or ⌘⇧L to open Continue
+#    Zed: press ⌘? to open the Assistant panel
 ```
+
+The installer will:
+- Detect Node.js (nvm, Homebrew, or system)
+- Auto-detect your Hyperspace API key from `~/.claude/settings.json`
+- Prompt for an optional Tavily web search key (free)
+- Write `~/.continue/config.yaml` with all models pre-configured
+- Install Continue.dev + YAML extension in Cursor and Antigravity
+- Register the bridge as a launchd agent (auto-starts on every login)
+- Run health checks and confirm everything is working
+
+### Remove
+
+```bash
+./uninstall.sh
+```
+
+This stops the bridge, removes the launchd agent, and removes `~/.hyperspace-bridge/`. Your `~/.continue/config.yaml` is kept.
+
+> **Privacy:** No data is stored. All traffic is local — the bridge is a stateless proxy. Nothing is logged except method, path, HTTP status, and response time. No conversation content ever touches disk.
 
 ---
 
@@ -215,10 +236,10 @@ cd Hyperspace-Multi-IDE-Bridge
 
 | Property | Detail |
 |---|---|
+| **No data stored** | The bridge is stateless — every request is translated and forwarded live. Nothing is cached, saved, or written to disk. All processing is local. |
 | **Network exposure** | Both ports bind to `127.0.0.1` only — unreachable from your network. Verified: connecting from a LAN IP is refused. |
 | **API key handling** | Bridge never stores keys. Reads the token at startup from `~/.claude/settings.json`. Forwarded as a header on each request. |
 | **Logging** | Logs only method, path, HTTP status, and latency. No request or response content is ever logged. |
-| **Caching** | None — the bridge is a stateless proxy. Every request hits Hyperspace fresh. |
 | **Dependencies** | Zero npm packages — uses Node's built-in modules only. No supply-chain surface. |
 | **Process isolation** | Runs as your user via launchd. No root, no sudo. |
 
