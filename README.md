@@ -182,8 +182,8 @@ By default Claude has no real-time data. **Tavily** gives Claude live internet a
 
 Once configured, just ask in Agent mode:
 ```
-what is the weather in Sofia today?
-latest changes in Node.js 22?
+Latest world news?
+current AAPL stock price?
 ```
 Claude calls Tavily automatically and returns real results.
 
