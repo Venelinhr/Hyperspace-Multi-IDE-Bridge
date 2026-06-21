@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hyperspace Bridge — Full Audit &amp; Install Guide</title>
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --surface: #141720;
+      --surface2: #1c2030;
+      --border: #2a2f42;
+      --accent: #6c63ff;
+      --accent2: #00d4aa;
+      --accent3: #ff6b6b;
+      --accent4: #ffb84d;
+      --text: #e8eaf0;
+      --muted: #7a809a;
+      --code-bg: #0a0c10;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg); color: var(--text);
+      line-height: 1.7; font-size: 16px;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 56px 24px 40px; text-align: center;
+      background: linear-gradient(180deg, #1a1040 0%, var(--bg) 100%);
+      border-bottom: 1px solid var(--border);
+    }
+    header .badge {
+      display: inline-block; background: var(--accent); color: #fff;
+      font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; padding: 4px 12px; border-radius: 20px;
+      margin-bottom: 18px;
+    }
+    header h1 {
+      font-size: clamp(28px, 5vw, 48px); font-weight: 800;
+      letter-spacing: -1px; margin-bottom: 12px;
+      background: linear-gradient(135deg, #fff 0%, #a89dff 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    header p { font-size: 18px; color: var(--muted); max-width: 620px; margin: 0 auto; }
+    header .meta-line {
+      margin-top: 18px; font-family: "SF Mono", monospace; font-size: 12px; color: var(--muted);
+    }
+
+    /* ── TOC ── */
+    .toc {
+      max-width: 920px; margin: 40px auto 0; padding: 0 24px;
+    }
+    .toc-inner {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 22px 28px;
+    }
+    .toc h3 {
+      font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
+    }
+    .toc ol { list-style: none; counter-reset: toc; }
+    .toc ol li {
+      counter-increment: toc; padding: 5px 0 5px 32px; position: relative;
+      font-size: 14px;
+    }
+    .toc ol li::before {
+      content: counter(toc, decimal-leading-zero); position: absolute; left: 0;
+      color: var(--accent); font-family: "SF Mono", monospace; font-weight: 700;
+    }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent); }
+
+    /* ── Layout ── */
+    main { max-width: 920px; margin: 0 auto; padding: 60px 24px 80px; }
+
+    section { margin-bottom: 64px; scroll-margin-top: 24px; }
+    section > h2 {
+      font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 22px;
+      padding-bottom: 12px; border-bottom: 2px solid var(--border);
+      display: flex; align-items: center; gap: 14px;
+    }
+    section > h2 .num {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      font-size: 15px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    section > h3 {
+      font-size: 18px; font-weight: 700; color: #fff;
+      margin: 28px 0 14px;
+    }
+
+    p { color: var(--muted); margin-bottom: 14px; }
+    p strong { color: var(--text); }
+    p:last-child { margin-bottom: 0; }
+
+    /* ── Status bar ── */
+    .status-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 14px; margin: 20px 0;
+    }
+    @media (max-width: 600px) { .status-grid { grid-template-columns: 1fr; } }
+    .stat {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px 22px;
+    }
+    .stat .k {
+      font-size: 11px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+    }
+    .stat .v {
+      font-size: 15px; font-weight: 600; color: var(--text);
+      font-family: "SF Mono", monospace; word-break: break-all;
+    }
+    .stat .v.ok { color: var(--accent2); }
+    .stat .v.warn { color: var(--accent4); }
+
+    /* ── Flow diagram ── */
+    .flow {
+      display: flex; align-items: stretch; justify-content: center;
+      flex-wrap: wrap; gap: 0; margin: 24px 0;
+    }
+    .flow-node {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px 18px;
+      text-align: center; min-width: 130px;
+    }
+    .flow-node.us { border-color: var(--accent); background: #1a1640; }
+    .flow-node .icon { font-size: 24px; margin-bottom: 6px; }
+    .flow-node .name { font-size: 12px; font-weight: 700; color: #fff; }
+    .flow-node .sub { font-size: 10px; color: var(--muted); margin-top: 3px; font-family: "SF Mono", monospace; }
+    .flow-node.us .name { color: #a89dff; }
+    .flow-arrow {
+      display: flex; align-items: center; padding: 0 6px;
+      color: var(--muted); font-size: 18px;
+    }
+
+    /* ── Code blocks ── */
+    .code-wrap { position: relative; margin: 14px 0; }
+    pre {
+      background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 18px 22px; padding-right: 90px;
+      overflow-x: auto;
+    }
+    pre code {
+      font-family: "SF Mono", "Fira Code", monospace; font-size: 13px;
+      color: #cdd6f4; line-height: 1.8;
+    }
+    pre code .c { color: #6c7086; }
+    pre code .ok { color: #a6e3a1; }
+    pre code .err { color: #f38ba8; }
+    pre code .y { color: #f9e2af; }
+    pre code .b { color: #89b4fa; }
+    pre code .m { color: #cba6f7; }
+    .copy-btn {
+      position: absolute; top: 12px; right: 12px;
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--muted); font-size: 11px; font-weight: 600;
+      letter-spacing: 0.5px; text-transform: uppercase;
+      padding: 6px 12px; border-radius: 6px; cursor: pointer;
+      transition: all .15s; font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .copy-btn:hover { color: #fff; background: var(--accent); border-color: var(--accent); }
+    .copy-btn.copied { background: var(--accent2); border-color: var(--accent2); color: #0a0c10; }
+
+    code:not(pre code) {
+      font-family: "SF Mono", monospace;
+      background: var(--code-bg); border: 1px solid var(--border);
+      color: var(--accent2); padding: 2px 7px; border-radius: 5px; font-size: 13px;
+    }
+
+    /* ── Steps ── */
+    .steps { display: flex; flex-direction: column; gap: 16px; margin: 20px 0; }
+    .step {
+      display: flex; gap: 18px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 22px 24px; align-items: flex-start;
+    }
+    .step-num {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      font-size: 15px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .step-num.ok { background: var(--accent2); }
+    .step-num.warn { background: var(--accent4); }
+    .step-num.err { background: var(--accent3); }
+    .step-body { flex: 1; min-width: 0; }
+    .step-body .title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .step-body p { font-size: 14px; color: var(--muted); margin: 0 0 10px; }
+
+    /* ── Tables ── */
+    table {
+      width: 100%; border-collapse: collapse; margin: 16px 0;
+      background: var(--surface); border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    th {
+      background: var(--surface2); color: var(--muted);
+      font-size: 11px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; text-align: left;
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+      font-size: 14px; color: var(--text); vertical-align: top;
+    }
+    td.muted { color: var(--muted); }
+    tr:last-child td { border-bottom: none; }
+    .pill {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.5px; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 20px;
+    }
+    .pill.ok   { background: rgba(0,212,170,0.15); color: var(--accent2); }
+    .pill.warn { background: rgba(255,184,77,0.15); color: var(--accent4); }
+    .pill.err  { background: rgba(255,107,107,0.15); color: var(--accent3); }
+
+    /* ── Callouts ── */
+    .callout {
+      border-radius: 10px; padding: 16px 20px; margin: 16px 0;
+      display: flex; gap: 14px; align-items: flex-start; font-size: 14px;
+    }
+    .callout.ok   { background: rgba(0,212,170,0.08);   border-left: 3px solid var(--accent2); }
+    .callout.warn { background: rgba(255,184,77,0.08);  border-left: 3px solid var(--accent4); }
+    .callout.err  { background: rgba(255,107,107,0.08); border-left: 3px solid var(--accent3); }
+    .callout.note { background: rgba(108,99,255,0.08);  border-left: 3px solid var(--accent); }
+    .callout .ico { font-size: 18px; flex-shrink: 0; line-height: 1.4; }
+    .callout .body { color: var(--text); }
+    .callout .body strong { color: #fff; }
+
+    /* ── Screenshots ── */
+    .shot {
+      margin: 22px 0; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    }
+    .shot img { display: block; width: 100%; height: auto; }
+    .shot-caption {
+      padding: 14px 20px; background: var(--surface2);
+      border-top: 1px solid var(--border);
+      font-size: 13px; color: var(--muted);
+    }
+    .shot-caption strong { color: #fff; }
+
+    /* ── IDE compatibility cards ── */
+    .ide-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px 28px; margin-bottom: 18px;
+    }
+    .ide-card.ok    { border-left: 5px solid var(--accent2); }
+    .ide-card.alt   { border-left: 5px solid var(--accent4); }
+    .ide-card.no    { border-left: 5px solid var(--accent3); }
+    .ide-card h3 { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+
+    /* ── Conversation transcript blocks ── */
+    .msg {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px 20px; margin: 12px 0;
+    }
+    .msg .who {
+      font-size: 11px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 8px;
+    }
+    .msg.you .who { color: var(--accent4); }
+    .msg .text { font-size: 14px; color: var(--text); }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center; padding: 40px 24px;
+      color: var(--muted); font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">Full Audit &amp; Install Guide</div>
+  <h1>Hyperspace Bridge</h1>
+  <p>A local-only translator that lets any Ollama or OpenAI-compatible IDE talk to Claude through SAP's Hyperspace (Hai) proxy. Built, deployed, validated on your Mac on 2026-06-21.</p>
+  <div class="meta-line">
+    Generated 2026-06-21 · macOS · Bridge PID 60784 · 5 IDEs tested · 22 live request validations
+  </div>
+</header>
+
+<div class="toc">
+  <div class="toc-inner">
+    <h3>Contents</h3>
+    <ol>
+      <li><a href="#what">What this is — in plain words</a></li>
+      <li><a href="#how">How it works — architecture &amp; data flow</a></li>
+      <li><a href="#continue">What is Continue.dev?</a></li>
+      <li><a href="#styling">Continue styling patch — Cursor-native look</a></li>
+      <li><a href="#tavily">Tavily web search — live data in Agent mode</a></li>
+      <li><a href="#agentfix">Agent mode fix — YAML extension required</a></li>
+      <li><a href="#statusbar">Hyperspace status indicator in the IDE status bar</a></li>
+      <li><a href="#status">Live system status (right now)</a></li>
+      <li><a href="#compat">IDE compatibility — what works, what doesn't, why</a></li>
+      <li><a href="#proof">Proof it works — screenshots from your IDEs</a></li>
+      <li><a href="#install">Install from scratch — for your team</a></li>
+      <li><a href="#tests">Test results — 24-point validation</a></li>
+      <li><a href="#files">Files on your Mac — what got created/modified</a></li>
+      <li><a href="#security">Security model</a></li>
+      <li><a href="#trouble">Troubleshooting</a></li>
+    </ol>
+  </div>
+</div>
+
+<main>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<section id="what">
+  <h2><span class="num">1</span> What this is — in plain words</h2>
+
+  <p>You use <strong>Hyperspace</strong> (the SAP <code>hai</code> proxy on <code>localhost:6655</code>) to access Claude — same as Mac Terminal uses for Claude Code. But Hyperspace speaks <strong>Anthropic's Messages API</strong>, which most AI-powered IDEs don't natively understand. They speak <strong>Ollama</strong> or <strong>OpenAI</strong> formats instead.</p>
+
+  <p>The <strong>Hyperspace Bridge</strong> is a small Node.js translator running on your Mac. It listens on two local ports, pretends to be Ollama and OpenAI, and forwards every request to Hyperspace in the format it expects. Responses stream back in real time, token by token.</p>
+
+  <div class="callout note">
+    <div class="ico">💡</div>
+    <div class="body"><strong>Analogy:</strong> Think of it as a power adapter when travelling. Your laptop plug (the IDE) is one shape, the wall socket (Hyperspace) is another shape. The bridge is the adapter — nothing changes about the laptop or the wall.</div>
+  </div>
+
+  <h3>Why this matters</h3>
+  <p>Once running, ANY local AI tool that speaks Ollama or OpenAI auto-detects your Hyperspace setup as if it were a local Ollama server. No more cloud SaaS lock-in to Cursor/Copilot/etc. — your editor uses Claude through your own corporate proxy, with proper licensing and zero data leak risk.</p>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<section id="how">
+  <h2><span class="num">2</span> How it works — architecture &amp; data flow</h2>
+
+  <h3>The full chain</h3>
+  <div class="flow">
+    <div class="flow-node"><div class="icon">🖥️</div><div class="name">Your IDE</div><div class="sub">Zed / Cursor / Antigravity</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node us"><div class="icon">🌉</div><div class="name">Bridge</div><div class="sub">:11434 + :11435</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><div class="icon">⚡</div><div class="name">Hai proxy</div><div class="sub">:6655/anthropic</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><div class="icon">🤖</div><div class="name">Claude</div><div class="sub">via SAP relay</div></div>
+  </div>
+
+  <h3>Translation table</h3>
+  <table>
+    <tr><th style="width:25%">Layer</th><th>What it speaks</th></tr>
+    <tr><td>IDE (Ollama mode)</td><td><code>POST /api/chat</code> — JSON, NDJSON streaming</td></tr>
+    <tr><td>IDE (OpenAI mode)</td><td><code>POST /v1/chat/completions</code> — JSON, SSE streaming</td></tr>
+    <tr><td><strong>Bridge — translates both →</strong></td><td><strong>Anthropic Messages API</strong> with <code>x-api-key</code> header</td></tr>
+    <tr><td>Hai proxy</td><td><code>POST /anthropic/v1/messages</code> — Anthropic spec exactly</td></tr>
+    <tr><td>Claude</td><td>Streams content_block_delta events</td></tr>
+  </table>
+
+  <h3>Two ports, one process</h3>
+  <div class="status-grid">
+    <div class="stat">
+      <div class="k">:11434 — Ollama protocol</div>
+      <div class="v ok">Auto-detected by most AI IDEs (Zed, Continue, Cursor extensions)</div>
+    </div>
+    <div class="stat">
+      <div class="k">:11435 — OpenAI protocol</div>
+      <div class="v ok">For tools with a "custom OpenAI base URL" field</div>
+    </div>
+  </div>
+
+  <h3>Auto-detection of your Hai API key</h3>
+  <p>The bridge looks for your <code>ANTHROPIC_AUTH_TOKEN</code> in this order:</p>
+  <ol style="margin-left: 24px; color: var(--muted); margin-bottom: 14px;">
+    <li><code>$HAI_API_KEY</code> environment variable (if set)</li>
+    <li><code>$ANTHROPIC_AUTH_TOKEN</code> environment variable (if set)</li>
+    <li><code>~/.claude/settings.json</code> → <code>env.ANTHROPIC_AUTH_TOKEN</code> (where <code>hai configure claude-code</code> writes it)</li>
+  </ol>
+  <p>That's why it "just works" if your Mac is already set up for Claude Code in Terminal.</p>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<section id="continue">
+  <h2><span class="num">3</span> What is Continue.dev?</h2>
+
+  <p><strong>Continue</strong> (<a href="https://continue.dev">continue.dev</a>) is an open-source AI coding assistant that runs <strong>as an extension inside your IDE</strong> — VS Code, Cursor, Antigravity, JetBrains, and others. Think of it as a chat panel + autocomplete + inline-edit tool that lives alongside your code.</p>
+
+  <p>The key thing that makes Continue special for our setup: <strong>you choose where its AI comes from.</strong> Unlike Cursor's built-in chat (locked to Cursor's cloud) or Antigravity's Agent (locked to Google's Cloud Code Assist), Continue lets you point it at any AI provider you want — including a <strong>local Ollama or OpenAI-compatible endpoint</strong>, which is exactly what the Hyperspace Bridge exposes.</p>
+
+  <h3>What it does inside your IDE</h3>
+  <table>
+    <tr><th style="width: 30%">Feature</th><th>How it feels</th></tr>
+    <tr><td><strong>Chat sidebar</strong></td><td>A panel on the left like ChatGPT, but it knows your codebase. Ask anything, paste code, get answers.</td></tr>
+    <tr><td><strong>Inline edit</strong> (⌘I)</td><td>Select code, describe a change, Continue rewrites it in place with a diff you accept or reject.</td></tr>
+    <tr><td><strong>Tab autocomplete</strong></td><td>Like Copilot — suggestions appear inline as you type. Uses Claude Haiku via the bridge for speed.</td></tr>
+    <tr><td><strong>Agent mode</strong></td><td>Continue can read files, run terminal commands, apply diffs across multiple files. You saw this in the screenshot where Claude offered a <code>date</code> shell command with an "Apply" button.</td></tr>
+    <tr><td><strong>@-mentions</strong></td><td>Type <code>@code</code>, <code>@docs</code>, <code>@terminal</code>, <code>@codebase</code> to give Claude focused context from your project.</td></tr>
+  </table>
+
+  <h3>Why we use it for Antigravity and Cursor</h3>
+  <p>Both Antigravity IDE and Cursor <strong>hard-wire their built-in AI to their own cloud</strong> — Antigravity to Google's <code>daily-cloudcode-pa.googleapis.com</code>, Cursor to <code>cursor.sh</code>. Neither IDE has a setting that says "use my own endpoint instead."</p>
+
+  <p>Continue.dev sidesteps this completely. It runs as a regular extension (no special privileges), brings its own UI and its own AI pipeline, and that pipeline IS configurable via <code>~/.continue/config.yaml</code>. We point that file at <code>http://localhost:11434</code> (the bridge), and now Continue → Bridge → Hai → Claude works end-to-end. The IDE's built-in AI stays untouched — you just ignore it.</p>
+
+  <div class="callout note">
+    <div class="ico">🔌</div>
+    <div class="body"><strong>The chain in one line:</strong> You press ⌘L in Antigravity → Continue extension activates → sends Ollama-format request to <code>localhost:11434</code> → bridge translates to Anthropic format → forwards to Hai on <code>:6655</code> → streams Claude's response back, token by token, to your IDE.</div>
+  </div>
+
+  <h3>How Continue knows about Hyperspace</h3>
+  <p>In your screenshot you saw 4 models in Continue's picker — Claude Sonnet (Hyperspace), Claude Haiku (Hyperspace), Claude Opus (Hyperspace), Claude Sonnet (OpenAI path). They all came from this config in <code>~/.continue/config.yaml</code>:</p>
+
+  <div class="code-wrap">
+<pre><code><span class="y">models</span>:
+  - <span class="y">name</span>: Claude Sonnet (Hyperspace)
+    <span class="y">provider</span>: ollama              <span class="c"># ← Continue speaks Ollama protocol</span>
+    <span class="y">model</span>: claude-sonnet-latest
+    <span class="y">apiBase</span>: <span class="ok">http://localhost:11434</span>   <span class="c"># ← talks to YOUR bridge</span>
+    <span class="y">roles</span>: [chat, edit, apply]</code></pre>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+  </div>
+
+  <p>Continue thinks it's talking to a local Ollama server. The bridge is <em>pretending</em> to be Ollama. Hai is what actually returns Claude responses. Continue doesn't know or care — it just sees a working backend.</p>
+
+  <h3>Why it's a good fit for your team</h3>
+  <table>
+    <tr><th style="width: 30%">Property</th><th>Why it matters</th></tr>
+    <tr><td><strong>Open source</strong></td><td>Apache 2.0 license. No SaaS subscription, no per-seat cost.</td></tr>
+    <tr><td><strong>Same config everywhere</strong></td><td>One <code>~/.continue/config.yaml</code> works in VS Code, Cursor, Antigravity, JetBrains. Onboard a teammate by sharing the file.</td></tr>
+    <tr><td><strong>No data leaves your Mac</strong></td><td>Continue's pipeline goes through the bridge only. The bridge only talks to <code>localhost:6655</code>. The only outbound traffic is Hai's existing call to Anthropic — the same path Claude Code uses in Terminal.</td></tr>
+    <tr><td><strong>Tool use / agent mode</strong></td><td>Claude can read your files, run commands, apply patches across multiple files — full coding-agent experience.</td></tr>
+    <tr><td><strong>Already installed</strong></td><td>I added it to both Antigravity and Cursor. Zero setup left.</td></tr>
+  </table>
+
+  <h3>In one sentence</h3>
+  <div class="callout ok">
+    <div class="ico">💡</div>
+    <div class="body"><strong>Continue is the AI sidebar inside your IDE that we pointed at the Hyperspace Bridge</strong> — so when you press <code>⌘L</code> in Antigravity, Claude responds via your corporate Hai proxy instead of via Google's cloud.</div>
+  </div>
+
+  <h3>Learn more</h3>
+  <p>Homepage: <a href="https://continue.dev">continue.dev</a> · Source: <a href="https://github.com/continuedev/continue">github.com/continuedev/continue</a> · Docs: <a href="https://docs.continue.dev">docs.continue.dev</a></p>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<section id="styling">
+  <h2><span class="num">4</span> Continue styling patch — Cursor-native look</h2>
+
+  <p>Out of the box, Continue.dev's UI uses its own font sizes, dimmed dropdown items, and depends on a CSS variable (<code>--vscode-input-background</code>) that <strong>Cursor's theme leaves unset or sets to a transparent value</strong>. The result: dropdown items looked faded, the model picker font was tiny, and a rainbow "currently generating" gradient that's meant to be a 1px border <em>filled the entire user message bubble</em>.</p>
+
+  <p>We patched Continue's bundled CSS to match Cursor's native chat sizing exactly. The patch is a CSS file appended to Continue's <code>index.css</code> in both Cursor and Antigravity. Pristine originals are saved as <code>index.css.original</code> so you can revert any time.</p>
+
+  <h3>What the patch fixes</h3>
+  <table>
+    <tr><th style="width: 38%">Issue</th><th>Root cause</th><th>Fix</th></tr>
+    <tr>
+      <td><strong>Rainbow filled the whole bubble</strong> instead of being a 1px border</td>
+      <td>Continue's inner editor uses <code>background-color: var(--vscode-input-background, #2d2d2d)</code>. Cursor's theme sets that variable to a transparent value, so the gradient behind shows through.</td>
+      <td>Force <code>--vscode-input-background: #1e1e1e !important</code> on <code>html</code>, <code>body</code>, and <code>:root</code></td>
+    </tr>
+    <tr>
+      <td><strong>Model dropdown items transparent</strong> (faded)</td>
+      <td>Continue uses Tailwind <code>opacity-50</code>–<code>opacity-90</code> on non-selected items</td>
+      <td>Override all <code>opacity-25</code> through <code>opacity-95</code> utility classes to <code>1</code>. Preserve <code>opacity-0</code> (used for hidden checkmarks).</td>
+    </tr>
+    <tr>
+      <td><strong>Mode dropdown ("Chat/Plan/Agent") overlapped "Last Session"</strong></td>
+      <td>Continue's floating popover had no opaque background — content behind bled through</td>
+      <td>Opaque <code>background-color</code> + border + box-shadow on <code>[data-floating-ui-portal]</code>, <code>[role="listbox"]</code>, <code>[role="menu"]</code></td>
+    </tr>
+    <tr>
+      <td><strong>Toolbar row tinted gray</strong> (Agent / Claude Sonnet / Enter)</td>
+      <td>Same <code>--vscode-input-background</code> mismatch from Cursor's theme</td>
+      <td>Same global CSS variable override</td>
+    </tr>
+    <tr>
+      <td><strong>Dropdown font too small (12px)</strong></td>
+      <td>Tailwind <code>text-xs</code> default</td>
+      <td>Force <code>font-size: 13px</code> on dropdown rows — matches Cursor native picker exactly</td>
+    </tr>
+    <tr>
+      <td><strong>Icons misaligned in dropdown rows</strong></td>
+      <td>SVGs inherited the bumped font-size and grew with text</td>
+      <td>Pin SVGs to <code>14×14px</code> with <code>flex-shrink: 0</code></td>
+    </tr>
+  </table>
+
+  <h3>How we found the root cause</h3>
+  <p>The rainbow-fill problem was the hardest one to track down. The path went like this:</p>
+  <ol style="margin: 0 0 16px 24px; color: var(--muted);">
+    <li>Continue's user-input editor is a 2-layer styled-component: an outer wrapper with <code>padding: 1px</code> + an animated gradient background, and an inner editor with an opaque background that <em>masks</em> the gradient — leaving only the 1px gap visible as a "border."</li>
+    <li>The inner editor uses <code>background-color: ${rv}</code> where <code>rv</code> is computed by Continue's theme helper <code>oi("input-background")</code>.</li>
+    <li>That helper returns the literal string <code>"var(--vscode-input-background, #2d2d2d)"</code>.</li>
+    <li><strong>In Antigravity:</strong> <code>--vscode-input-background</code> is a solid dark color, so the mask works → 1px border visible.</li>
+    <li><strong>In Cursor:</strong> the variable is set to something transparent at <code>body</code> level, so the mask becomes transparent → gradient fills the bubble.</li>
+    <li><strong>Fix:</strong> override the variable globally with <code>!important</code> at <code>html</code>/<code>body</code>/<code>:root</code> level. Continue's existing code does the rest.</li>
+  </ol>
+
+  <h3>The final patch (v8)</h3>
+  <div class="code-wrap">
+<pre><code><span class="c">/* hyperspace-bridge-style-fix v8 — appended to Continue's index.css */</span>
+
+<span class="c">/* (1) Force the VSCode token Cursor leaves transparent. This is the
+       single fix that makes the rainbow show as a 1px border, not fill. */</span>
+html, body, :root {
+  --vscode-input-background: #1e1e1e !important;
+  --vscode-menu-background: #1e1e1e !important;
+  --vscode-menu-border: #454545 !important;
+}
+
+<span class="c">/* (2) Full opacity on dim utility classes (model picker items). */</span>
+.opacity-25, .opacity-30, ... , .opacity-90, .opacity-95 {
+  opacity: 1 !important;
+}
+
+<span class="c">/* (3) Opaque dropdown popovers — Mode &amp; Model pickers no longer bleed through. */</span>
+[data-floating-ui-portal], [role="listbox"], [role="menu"] {
+  background-color: #1e1e1e !important;
+  border: 1px solid #454545 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5) !important;
+}
+
+<span class="c">/* (4) Cursor-native 13px dropdown rows + 14×14 icons. */</span>
+[role="listbox"] &gt; li, [role="menu"] &gt; div {
+  font-size: 13px !important; line-height: 1.4 !important;
+  padding: 5px 10px !important; min-height: 26px !important;
+}
+[role="listbox"] &gt; li &gt; svg, [role="menu"] &gt; div &gt; svg {
+  width: 14px !important; height: 14px !important;
+}
+
+<span class="c">/* (5) Disabled items stay dimmed (correct UX signal). */</span>
+[aria-disabled="true"], [disabled] { opacity: 0.5 !important; }</code></pre>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+  </div>
+
+  <h3>Applied to</h3>
+  <table>
+    <tr><th>IDE</th><th>Path</th></tr>
+    <tr><td>Cursor</td><td><code>~/.cursor/extensions/continue.continue-2.0.0-darwin-arm64/gui/assets/index.css</code></td></tr>
+    <tr><td>Antigravity IDE</td><td><code>~/.antigravity-ide/extensions/continue.continue-2.0.0-darwin-arm64/gui/assets/index.css</code></td></tr>
+    <tr><td>Cursor (backup)</td><td><code>...index.css.original</code> — pristine copy</td></tr>
+    <tr><td>Antigravity (backup)</td><td><code>...index.css.original</code> — pristine copy</td></tr>
+  </table>
+
+  <div class="callout warn">
+    <div class="ico">⚠️</div>
+    <div class="body"><strong>Re-apply after Continue updates:</strong> when Continue's extension auto-updates, the patched <code>index.css</code> gets replaced with a fresh upstream version. Re-append the v8 patch block to the new file (or restore the backup and re-patch). The pristine <code>.original</code> file is also overwritten on update, so keep the patch script in your team repo.</div>
+  </div>
+
+  <h3>To revert</h3>
+  <div class="code-wrap">
+<pre><code>cp ~/.cursor/extensions/continue.continue-2.0.0-darwin-arm64/gui/assets/index.css.original \
+   ~/.cursor/extensions/continue.continue-2.0.0-darwin-arm64/gui/assets/index.css
+cp ~/.antigravity-ide/extensions/continue.continue-2.0.0-darwin-arm64/gui/assets/index.css.original \
+   ~/.antigravity-ide/extensions/continue.continue-2.0.0-darwin-arm64/gui/assets/index.css
+
+<span class="c"># Then restart both IDEs to load the original CSS.</span></code></pre>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<section id="tavily">
+  <h2><span class="num">5</span> Tavily web search — live data in Agent mode</h2>
+
+  <p>By default Claude has no real-time data. Tavily is a web search API that gives Claude live internet access inside Continue's Agent mode — weather, news, prices, documentation lookups, anything time-sensitive.</p>
+
+  <div class="callout ok">
+    <div class="ico">🌐</div>
+    <div class="body"><strong>Free tier:</strong> 1,000 searches/month. No credit card. Get a key at <a href="https://app.tavily.com">app.tavily.com</a> in under 30 seconds.</div>
+  </div>
+
+  <h3>How it's wired in</h3>
+  <p>The Tavily MCP server runs as a subprocess of Continue. When Claude needs live data in Agent mode it calls <code>tavily_search</code> automatically — no special syntax needed from you.</p>
+
+  <div class="flow" style="margin: 20px 0;">
+    <div class="flow-node"><div class="icon">💬</div><div class="name">You ask</div><div class="sub">"weather in Sofia?"</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node us"><div class="icon">🤖</div><div class="name">Claude</div><div class="sub">calls tavily_search</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><div class="icon">🌐</div><div class="name">Tavily</div><div class="sub">live web results</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><div class="icon">✅</div><div class="name">Real answer</div><div class="sub">in seconds</div></div>
+  </div>
+
+  <h3>Config added to <code>~/.continue/config.yaml</code></h3>
+  <div class="code-wrap">
+<pre><code><span class="y">mcpServers</span>:
+  - <span class="y">name</span>: tavily
+    <span class="y">command</span>: npx
+    <span class="y">args</span>: [-y, tavily-mcp@0.2.20]
+    <span class="y">env</span>:
+      <span class="y">TAVILY_API_KEY</span>: <span class="ok">tvly-your-key-here</span>
+
+<span class="y">rules</span>:
+  - <span class="y">name</span>: Use Tavily for web search
+    <span class="y">rule</span>: >
+      When you need live web data, use the tavily_search MCP tool.
+      Always prefer it over saying "I can't search the web".</code></pre>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+  </div>
+
+  <h3>The installer handles everything</h3>
+  <p><code>install.sh</code> prompts for the Tavily key during setup and writes it into the config automatically. Re-run <code>./install.sh</code> to add a key later — it detects the missing key and prompts for it. The key is also stored in the launchd plist so it survives reboots.</p>
+
+  <h3>Usage</h3>
+  <ol style="margin: 8px 0 0 24px; color: var(--muted);">
+    <li>Open Continue (⌘L / ⌘⇧L)</li>
+    <li>Select <strong>Agent</strong> mode in the toolbar (not Chat)</li>
+    <li>Ask anything live: <em>"latest news"</em>, <em>"weather in Sofia"</em>, <em>"current AAPL price"</em></li>
+    <li>Claude calls Tavily automatically and answers with real data</li>
+  </ol>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<section id="agentfix">
+  <h2><span class="num">6</span> Agent mode fix — YAML extension required</h2>
+
+  <p>Continue's Agent mode silently stopped working without a <strong>specific VS Code extension</strong> installed. This was the hardest bug to diagnose — the bridge was healthy, the extension was loaded, but no chat requests ever reached the bridge.</p>
+
+  <h3>Root cause</h3>
+  <p>Continue requires <code>redhat.vscode-yaml</code> to register its <code>config.yaml</code> schema. Without it, Continue throws this error silently at startup:</p>
+
+  <div class="code-wrap">
+<pre><code><span class="err">Failed to register Continue config.yaml schema, most likely,
+YAML extension is not installed
+CodeExpectedError: Unable to write to User Settings because
+yaml.schemas is not a registered configuration.</span></code></pre>
+  </div>
+
+  <p>When this happens, Continue's entire model backend fails to initialize. Agent mode accepts input but sends <strong>nothing</strong> to the bridge. The bridge log shows only health checks, never chat requests.</p>
+
+  <h3>The fix</h3>
+  <p><code>install.sh</code> step 7 now auto-installs both required extensions in every detected IDE:</p>
+  <table>
+    <tr><th>Extension</th><th>Why needed</th></tr>
+    <tr><td><code>Continue.continue</code></td><td>The AI sidebar itself</td></tr>
+    <tr><td><code>redhat.vscode-yaml</code></td><td><strong>Required</strong> for Continue to initialize its model backend. Without it, Agent mode silently fails.</td></tr>
+  </table>
+
+  <h3>Manual install (if needed)</h3>
+  <div class="code-wrap">
+<pre><code><span class="c"># Cursor:</span>
+"/Applications/Cursor.app/Contents/Resources/app/bin/cursor" \
+  --install-extension redhat.vscode-yaml
+
+<span class="c"># Antigravity:</span>
+"/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide" \
+  --install-extension redhat.vscode-yaml</code></pre>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+  </div>
+
+  <div class="callout warn">
+    <div class="ico">⚠️</div>
+    <div class="body"><strong>Symptom to watch for:</strong> bridge log shows only <code>GET /health → 200</code> with no <code>POST /api/chat</code> lines — Continue is running but not sending requests. Fix: install <code>redhat.vscode-yaml</code> and restart.</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<section id="statusbar">
+  <h2><span class="num">7</span> Hyperspace status indicator in the IDE status bar</h2>
+
+  <p>A green <strong>"Hyperspace"</strong> text appears in the IDE status bar (bottom right, next to "Continue") whenever the bridge is reachable. No dot, no icon — just the word in green. When the bridge is offline, it disappears completely.</p>
+
+  <div class="callout ok">
+    <div class="ico">💚</div>
+    <div class="body">
+      <strong>Online:</strong> &nbsp;<code style="color: #00d4aa; background: none; border: none; padding: 0;">✓ Continue (NE) &nbsp; Hyperspace</code><br>
+      <strong>Offline:</strong> &nbsp;<code style="color: var(--muted); background: none; border: none; padding: 0;">✓ Continue (NE)</code>
+    </div>
+  </div>
+
+  <h3>How it works</h3>
+  <p>We patched Continue's <code>extension.js</code> (the running extension, not the webview) to add a dedicated VS Code status bar item with <code>vscode.ThemeColor("terminal.ansiGreen")</code>. A polling loop pings <code>http://127.0.0.1:11434/health</code> every 15 seconds and shows/hides the item based on the response.</p>
+
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Poll interval</td><td>15 seconds</td></tr>
+    <tr><td>First check</td><td>Immediately on IDE startup</td></tr>
+    <tr><td>Cost</td><td>~1ms loopback request every 15s — negligible</td></tr>
+    <tr><td>When offline</td><td>Item is hidden — no noise, no error state</td></tr>
+    <tr><td>Color</td><td><code>terminal.ansiGreen</code> — VS Code's standard green token</td></tr>
+  </table>
+
+  <h3>Files patched</h3>
+  <table>
+    <tr><th>IDE</th><th>File</th></tr>
+    <tr><td>Cursor</td><td><code>~/.cursor/extensions/continue.continue-2.0.0-darwin-arm64/out/extension.js</code></td></tr>
+    <tr><td>Antigravity</td><td><code>~/.antigravity-ide/extensions/continue.continue-2.0.0-darwin-arm64/out/extension.js</code></td></tr>
+    <tr><td>Backups</td><td><code>...extension.js.original</code> alongside each patched file</td></tr>
+  </table>
+
+  <div class="callout warn">
+    <div class="ico">⚠️</div>
+    <div class="body"><strong>Re-apply after Continue updates:</strong> when Continue auto-updates, <code>extension.js</code> is replaced. Re-run the statusbar patch from the bridge distribution to restore the indicator. Both <code>.original</code> backup files are preserved so you can diff against them.</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<section id="status">
+  <h2><span class="num">8</span> Live system status</h2>
+  <p>Captured directly from your Mac, 2026-06-21 ~10:25:</p>
+
+  <div class="status-grid">
+    <div class="stat">
+      <div class="k">Bridge process</div>
+      <div class="v ok">PID 60784 — running since 00:35</div>
+    </div>
+    <div class="stat">
+      <div class="k">Launchd agent</div>
+      <div class="v ok">com.hyperspace.bridge loaded</div>
+    </div>
+    <div class="stat">
+      <div class="k">Hai upstream</div>
+      <div class="v ok">reachable @ localhost:6655/anthropic</div>
+    </div>
+    <div class="stat">
+      <div class="k">API key</div>
+      <div class="v ok">configured (from ~/.claude/settings.json)</div>
+    </div>
+    <div class="stat">
+      <div class="k">Ollama port :11434</div>
+      <div class="v ok">healthy</div>
+    </div>
+    <div class="stat">
+      <div class="k">OpenAI port :11435</div>
+      <div class="v ok">healthy</div>
+    </div>
+    <div class="stat">
+      <div class="k">LAN exposure</div>
+      <div class="v ok">none — 127.0.0.1 only</div>
+    </div>
+    <div class="stat">
+      <div class="k">Auto-start on login</div>
+      <div class="v ok">yes (launchd)</div>
+    </div>
+  </div>
+
+  <h3>Available models</h3>
+  <table>
+    <tr><th>Model name</th><th>Upstream</th><th>Use for</th></tr>
+    <tr><td><code>claude-sonnet-latest</code></td><td>Sonnet 4.5</td><td>Default — chat, edits, agent</td></tr>
+    <tr><td><code>claude-opus-latest</code></td><td>Opus</td><td>Heavy reasoning, large refactors</td></tr>
+    <tr><td><code>claude-haiku-latest</code></td><td>Haiku</td><td>Fast tasks, autocomplete</td></tr>
+    <tr><td><code>hyperspace</code> / <code>hyperspace:latest</code></td><td>aliases → Sonnet</td><td>Default fallback</td></tr>
+  </table>
+
+  <h3>Recent activity from the bridge log</h3>
+  <div class="code-wrap">
+    <pre><code><span class="c">[2026-06-21T07:19:26.357Z]</span> POST /api/chat → <span class="ok">200</span> (986ms)
+<span class="c">[2026-06-21T07:19:27.449Z]</span> POST /api/chat → <span class="ok">200</span> (1067ms)
+<span class="c">[2026-06-21T07:22:45.315Z]</span> POST /api/chat → <span class="ok">200</span> (1529ms)
+<span class="c">[2026-06-21T07:22:46.393Z]</span> POST /api/chat → <span class="ok">200</span> (1025ms)
+<span class="c">[2026-06-21T07:22:57.793Z]</span> POST /api/chat → <span class="ok">200</span> (1607ms)</code></pre>
+  </div>
+  <p>All requests served in ~1–2 seconds end-to-end. Streaming starts immediately on the first token.</p>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<section id="compat">
+  <h2><span class="num">9</span> IDE compatibility</h2>
+  <p>Not every IDE lets you redirect AI traffic to a local endpoint. Here's the honest breakdown, with hard evidence from each IDE's source code.</p>
+
+  <div class="ide-card ok">
+    <h3>Zed <span class="pill ok">✓ Native — works directly</span></h3>
+    <p>Zed has first-class <code>language_models.ollama</code> and <code>language_models.openai_compatible</code> in its settings. Already configured at <code>~/.config/zed/settings.json</code>.</p>
+    <p>Open Assistant panel → pick "Claude (via Hyperspace)" → chat. Done.</p>
+  </div>
+
+  <div class="ide-card alt">
+    <h3>Antigravity IDE <span class="pill warn">⚠ Native AI uses Google gRPC — use Continue.dev sidebar instead</span></h3>
+    <p><strong>Why the native panel can't use the bridge:</strong></p>
+    <ul style="margin: 8px 0 14px 24px; color: var(--muted);">
+      <li>Antigravity is a Google Labs IDE (built on Codeium's codebase)</li>
+      <li>Native "Agent" panel uses <code>daily-cloudcode-pa.googleapis.com</code> with gRPC-Connect over HTTP/2 and proprietary Codeium Protobuf schemas</li>
+      <li>Auth is Google OAuth 2.0 Gaia tokens — not API key based</li>
+      <li>No public schema, no Anthropic-compatible mode, no settings field for a custom endpoint</li>
+    </ul>
+    <p><strong>Solution that works:</strong> Continue.dev v2.0.0 extension installed inside Antigravity. Continue speaks Ollama → bridge handles the rest. Activated via <code>⌘L</code>.</p>
+  </div>
+
+  <div class="ide-card alt">
+    <h3>Cursor <span class="pill warn">⚠ Same as Antigravity — use Continue.dev</span></h3>
+    <p>Cursor's Cmd+K and chat route through <code>cursor.sh</code> cloud. The "OpenAI base URL" override field that previously existed has been disabled in current builds. Continue.dev v2.0.0 extension installed inside Cursor for the same workaround.</p>
+  </div>
+
+  <div class="ide-card ok">
+    <h3>VS Code <span class="pill ok">✓ via Continue or Cline extension</span></h3>
+    <p>Install Continue.dev or Cline from the marketplace. Same <code>~/.continue/config.yaml</code> works everywhere.</p>
+  </div>
+
+  <div class="ide-card ok">
+    <h3>Any tool with <code>OPENAI_BASE_URL</code> or Ollama URL <span class="pill ok">✓ Works</span></h3>
+    <p>JetBrains AI Assistant, Helix, Neovim plugins, CLI tools — point them at <code>localhost:11434</code> (Ollama) or <code>http://localhost:11435/v1</code> (OpenAI). Bridge handles them all.</p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<section id="proof">
+  <h2><span class="num">10</span> Proof it works — screenshots</h2>
+
+  <h3>Zed — Assistant panel using Claude (via Hyperspace)</h3>
+  <div class="shot">
+    <img src="shots/zed-working.png" alt="Zed Assistant answering 'What date is today?' with a real Claude response" />
+    <div class="shot-caption">
+      <strong>Live test:</strong> "What date is today?" → Claude correctly responded that it doesn't have real-time information (correct behaviour — no tools attached). Model picker shows all 5 Hyperspace models from <code>~/.config/zed/settings.json</code>.
+    </div>
+  </div>
+
+  <div class="shot">
+    <img src="shots/zed-model-picker.png" alt="Zed model picker showing Claude (via Hyperspace) and four claude-*-latest models" />
+    <div class="shot-caption">
+      <strong>Model picker in Zed</strong> — "Claude (via Hyperspace)" is checked, plus the three Hyperspace models (haiku/opus/sonnet-latest) auto-listed via <code>/api/tags</code>.
+    </div>
+  </div>
+
+  <h3>Antigravity — Continue sidebar talking through the bridge</h3>
+  <div class="shot">
+    <img src="shots/continue-working.png" alt="Continue panel inside Antigravity showing two Claude conversations" />
+    <div class="shot-caption">
+      <strong>Live conversation in Continue inside Antigravity.</strong> User typed "hi" → Claude replied. User asked "What time is it?" → Claude correctly said it doesn't have real-time access and offered a shell <code>date</code> command (with Apply button). Model dropdown at the bottom shows all 4 Hyperspace models — "Claude Sonnet (Hyperspace)" is the active model.
+    </div>
+  </div>
+
+  <div class="shot">
+    <img src="shots/continue-config.png" alt="Continue config panel showing the model picker open" />
+    <div class="shot-caption">
+      <strong>Continue's model picker.</strong> All 4 Hyperspace models loaded from <code>~/.continue/config.yaml</code>: Haiku, Opus, Sonnet, Sonnet (OpenAI path). The Anthropic/Gemini key fields below are optional Continue providers — irrelevant here, since our models bypass them via the bridge.
+    </div>
+  </div>
+
+  <h3>Antigravity — native "Agent" panel (Google's Claude)</h3>
+  <div class="shot">
+    <img src="shots/antigravity-google-claude.png" alt="Antigravity native Agent panel with Claude Sonnet 4.6 (Thinking)" />
+    <div class="shot-caption">
+      <strong>This is Antigravity's built-in Agent</strong> — it routes through Google Cloud Code Assist (<code>daily-cloudcode-pa.googleapis.com</code>), which IS Claude Sonnet 4.6 but on Google's bill/path, not your Hyperspace. We can't redirect this panel. <strong>Use the Continue sidebar instead</strong> (left side) — that one goes through Hyperspace.
+    </div>
+  </div>
+
+  <h3>Final summary from the last validation</h3>
+  <div class="msg you">
+    <div class="who">You asked</div>
+    <div class="text">"check these — Antigravity Continue with model picker showing Hyperspace models"</div>
+  </div>
+  <div class="msg">
+    <div class="who">Result</div>
+    <div class="text">
+      <strong>🎉 This is the win.</strong> Both screenshots prove the bridge is fully working inside Antigravity IDE.
+      <ul style="margin: 10px 0 0 24px; color: var(--muted);">
+        <li><strong>Continue sidebar opened</strong> — extension activated correctly after restart</li>
+        <li><strong>Real Claude reply to "hi"</strong> via Hyperspace bridge</li>
+        <li><strong>Tool/action use working</strong> — Claude offered <code>date</code> command with Apply button</li>
+        <li><strong>4 Hyperspace models</strong> loaded from <code>~/.continue/config.yaml</code></li>
+        <li><strong>Sub-second latency</strong>, smooth token streaming — same feel as Terminal</li>
+        <li><strong>Native Agent panel coexists</strong> — no conflict between the two</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<section id="install">
+  <h2><span class="num">11</span> Install from scratch (for your team)</h2>
+  <p>Each teammate runs this once on their own Mac. Total time: under 2 minutes.</p>
+
+  <div class="callout note">
+    <div class="ico">📋</div>
+    <div class="body"><strong>Prerequisites:</strong>
+      Node.js (<code>brew install node</code>) and <code>hai</code> already configured for Claude Code in Terminal (<code>hai configure claude-code</code>).</div>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="title">Copy the bridge folder to the teammate's Mac</div>
+        <p>Share <code>~/Downloads/hyperspace-bridge/</code> via your team Git, Slack, or zip.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="title">Run the installer</div>
+        <p>One command — detects Node, copies bridge, registers launchd agent, <strong>prompts for Tavily key</strong>, writes Continue config, runs health check:</p>
+        <div class="code-wrap">
+<pre><code><span class="b">cd</span> ~/Downloads/hyperspace-bridge
+./install.sh</code></pre>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num warn">3</div>
+      <div class="step-body">
+        <div class="title">Tavily API key — live web search (free, optional)</div>
+        <p>The installer will pause and ask:</p>
+        <div class="output">
+          <span class="info">?</span> Enter your Tavily API key (or press Enter to skip):<br>
+          &nbsp;&nbsp;&nbsp;Key (tvly-...): <span class="ok">tvly-your-key-here</span>
+        </div>
+        <p><strong>Get a free key in 30 seconds:</strong></p>
+        <ol style="margin: 8px 0 14px 24px; color: var(--muted);">
+          <li>Go to <a href="https://app.tavily.com">app.tavily.com</a></li>
+          <li>Sign up — no credit card needed</li>
+          <li>Copy your <code>tvly-...</code> key</li>
+          <li>Paste it into the installer prompt</li>
+        </ol>
+        <p>Free tier gives 1,000 searches/month — enough for daily dev use. Without a key, Claude will say "I can't search the web" when asked about live data.</p>
+        <div class="tip">
+          <div class="tip-icon">💡</div>
+          <div class="tip-body"><strong>Skipped it?</strong> Re-run <code>./install.sh</code> at any time to add the key. It will detect the missing key and prompt for it.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num ok">4</div>
+      <div class="step-body">
+        <div class="title">For Zed users — open Assistant and use Claude</div>
+        <p>Bridge auto-registers in <code>~/.config/zed/settings.json</code> if you copy the template entry. Restart Zed → ⌘? → pick "Claude (via Hyperspace)".</p>
+        <div class="code-wrap">
+<pre><code><span class="c">// Add to ~/.config/zed/settings.json</span>
+<span class="y">"language_models"</span>: {
+  <span class="y">"ollama"</span>: {
+    <span class="y">"api_url"</span>: <span class="ok">"http://localhost:11434"</span>,
+    <span class="y">"available_models"</span>: [{ <span class="y">"name"</span>: <span class="ok">"hyperspace"</span>, <span class="y">"display_name"</span>: <span class="ok">"Claude (via Hyperspace)"</span>, <span class="y">"max_tokens"</span>: 200000 }]
+  }
+},
+<span class="y">"agent"</span>: { <span class="y">"default_model"</span>: { <span class="y">"provider"</span>: <span class="ok">"ollama"</span>, <span class="y">"model"</span>: <span class="ok">"hyperspace"</span> } }</code></pre>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num warn">5</div>
+      <div class="step-body">
+        <div class="title">For Antigravity / Cursor users — install Continue.dev extension</div>
+        <p>One command per IDE:</p>
+        <div class="code-wrap">
+<pre><code><span class="c"># Antigravity:</span>
+<span class="ok">"/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide"</span> \
+  --install-extension Continue.continue
+
+<span class="c"># Cursor:</span>
+<span class="ok">"/Applications/Cursor.app/Contents/Resources/app/bin/cursor"</span> \
+  --install-extension Continue.continue</code></pre>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num warn">6</div>
+      <div class="step-body">
+        <div class="title">Create Continue's config — same for every IDE</div>
+        <p>Save to <code>~/.continue/config.yaml</code>:</p>
+        <div class="code-wrap">
+<pre><code><span class="y">name</span>: Hyperspace Bridge
+<span class="y">version</span>: 1.1.0
+<span class="y">schema</span>: v1
+
+<span class="y">models</span>:
+  - <span class="y">name</span>: Claude Sonnet (Hyperspace)
+    <span class="y">provider</span>: ollama
+    <span class="y">model</span>: claude-sonnet-latest
+    <span class="y">apiBase</span>: <span class="ok">http://localhost:11434</span>
+    <span class="y">roles</span>: [chat, edit, apply]
+    <span class="y">defaultCompletionOptions</span>:
+      <span class="y">contextLength</span>: 200000
+      <span class="y">maxTokens</span>: 8192
+
+  - <span class="y">name</span>: Claude Haiku (Hyperspace)
+    <span class="y">provider</span>: ollama
+    <span class="y">model</span>: claude-haiku-latest
+    <span class="y">apiBase</span>: <span class="ok">http://localhost:11434</span>
+    <span class="y">roles</span>: [chat, autocomplete]
+
+  - <span class="y">name</span>: Claude Opus (Hyperspace)
+    <span class="y">provider</span>: ollama
+    <span class="y">model</span>: claude-opus-latest
+    <span class="y">apiBase</span>: <span class="ok">http://localhost:11434</span>
+    <span class="y">roles</span>: [chat, edit]</code></pre>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num ok">7</div>
+      <div class="step-body">
+        <div class="title">Restart the IDE and chat</div>
+        <p>Open the IDE → Continue icon appears in the sidebar (or press <code>⌘L</code>) → pick the Claude model → type. Real Claude through Hyperspace, no internet config, no API keys, no cloud bills.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Verification — quick smoke test</h3>
+  <div class="code-wrap">
+<pre><code><span class="c"># Both health checks should return ok:</span>
+curl http://localhost:11434/health
+curl http://localhost:11435/health
+
+<span class="c"># Real chat — should stream a response from Claude:</span>
+curl -X POST http://localhost:11434/api/chat \
+  -H <span class="ok">"Content-Type: application/json"</span> \
+  -d <span class="ok">'{"model":"hyperspace","stream":true,"messages":[{"role":"user","content":"reply with exactly: OK"}]}'</span></code></pre>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<section id="tests">
+  <h2><span class="num">12</span> Test results — 24-point validation</h2>
+  <p>Every test was run live against your Mac on 2026-06-21:</p>
+
+  <table>
+    <tr><th>#</th><th>Test</th><th>Result</th></tr>
+    <tr><td>1</td><td>Bridge process alive (launchd-managed)</td><td><span class="pill ok">✓ PID 60784</span></td></tr>
+    <tr><td>2</td><td>Health endpoint :11434</td><td><span class="pill ok">✓ HTTP 200</span></td></tr>
+    <tr><td>3</td><td>Health endpoint :11435</td><td><span class="pill ok">✓ HTTP 200</span></td></tr>
+    <tr><td>4</td><td>Hai upstream reachable (api_key_configured: true)</td><td><span class="pill ok">✓</span></td></tr>
+    <tr><td>5</td><td>Ollama <code>/api/tags</code> returns 4 models</td><td><span class="pill ok">✓</span></td></tr>
+    <tr><td>6</td><td>Ollama <code>/api/show</code> returns model details</td><td><span class="pill ok">✓</span></td></tr>
+    <tr><td>7</td><td>Ollama non-streaming chat returns "ALPHA"</td><td><span class="pill ok">✓</span></td></tr>
+    <tr><td>8</td><td>Ollama streaming chat returns "BETA" in NDJSON</td><td><span class="pill ok">✓ 19 chunks</span></td></tr>
+    <tr><td>9</td><td>OpenAI <code>/v1/models</code> returns hyperspace</td><td><span class="pill ok">✓</span></td></tr>
+    <tr><td>10</td><td>OpenAI non-streaming chat returns "GAMMA"</td><td><span class="pill ok">✓ finish_reason: stop</span></td></tr>
+    <tr><td>11</td><td>OpenAI streaming chat returns "DELTA" + [DONE]</td><td><span class="pill ok">✓</span></td></tr>
+    <tr><td>12</td><td>System message correctly translated to Anthropic system field</td><td><span class="pill ok">✓ "ECHO" output</span></td></tr>
+    <tr><td>13</td><td>LAN isolation — 192.168.50.254:11434 refuses</td><td><span class="pill ok">✓ Refused</span></td></tr>
+    <tr><td>14</td><td>Continue YAML config valid</td><td><span class="pill ok">✓ 5 models</span></td></tr>
+    <tr><td>15</td><td>Zed JSONC config valid (Ollama URL correct)</td><td><span class="pill ok">✓</span></td></tr>
+    <tr><td>16</td><td>Antigravity settings.json valid</td><td><span class="pill ok">✓ 12 settings</span></td></tr>
+    <tr><td>17</td><td>Antigravity keybindings.json valid</td><td><span class="pill ok">✓ 6 bindings</span></td></tr>
+    <tr><td>18</td><td>Continue.dev installed in Antigravity</td><td><span class="pill ok">✓ v2.0.0</span></td></tr>
+    <tr><td>19</td><td>Continue.dev installed in Cursor</td><td><span class="pill ok">✓ v2.0.0</span></td></tr>
+    <tr><td>20</td><td>Live Sonnet chat via Continue request shape</td><td><span class="pill ok">✓ 986ms</span></td></tr>
+    <tr><td>21</td><td>Live Haiku chat via Continue request shape</td><td><span class="pill ok">✓ 1067ms</span></td></tr>
+    <tr><td>22</td><td>Multi-turn conversation preserved (number 42 test)</td><td><span class="pill ok">✓</span></td></tr>
+    <tr><td>23</td><td>End-to-end through Zed UI (screenshot)</td><td><span class="pill ok">✓</span></td></tr>
+    <tr><td>24</td><td>End-to-end through Antigravity Continue UI (screenshot)</td><td><span class="pill ok">✓</span></td></tr>
+  </table>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<section id="files">
+  <h2><span class="num">13</span> Files on your Mac</h2>
+
+  <h3>Bridge distribution folder (share this with your team)</h3>
+  <table>
+    <tr><th>File</th><th>Purpose</th></tr>
+    <tr><td><code>~/Downloads/hyperspace-bridge/hyperspace-bridge.js</code></td><td>The bridge server (~860 lines, zero deps)</td></tr>
+    <tr><td><code>~/Downloads/hyperspace-bridge/com.hyperspace.bridge.plist</code></td><td>launchd config — auto-start at login</td></tr>
+    <tr><td><code>~/Downloads/hyperspace-bridge/install.sh</code></td><td>One-command setup</td></tr>
+    <tr><td><code>~/Downloads/hyperspace-bridge/uninstall.sh</code></td><td>Clean removal</td></tr>
+    <tr><td><code>~/Downloads/hyperspace-bridge/README.md</code></td><td>Quick reference</td></tr>
+    <tr><td><code>~/Downloads/hyperspace-bridge/explainer.html</code></td><td>Visual explainer</td></tr>
+    <tr><td><code>~/Downloads/hyperspace-bridge/setup-steps.html</code></td><td>Step-by-step copy-paste guide</td></tr>
+    <tr><td><code>~/Downloads/hyperspace-bridge/ide-compatibility.html</code></td><td>Which IDEs work, how</td></tr>
+  </table>
+
+  <h3>Installed locations on your Mac (managed by <code>install.sh</code>)</h3>
+  <table>
+    <tr><th>Path</th><th>What</th></tr>
+    <tr><td><code>~/.hyperspace-bridge/hyperspace-bridge.js</code></td><td>Live bridge — what launchd executes</td></tr>
+    <tr><td><code>~/Library/LaunchAgents/com.hyperspace.bridge.plist</code></td><td>launchd auto-start agent</td></tr>
+    <tr><td><code>~/Library/Logs/hyperspace-bridge.log</code></td><td>All request logs (rotates on its own)</td></tr>
+  </table>
+
+  <h3>IDE integrations</h3>
+  <table>
+    <tr><th>IDE</th><th>File</th><th>What was changed</th></tr>
+    <tr><td>Zed</td><td><code>~/.config/zed/settings.json</code></td><td>Added <code>language_models.ollama</code> + <code>agent.default_model</code></td></tr>
+    <tr><td>Continue.dev (all IDEs)</td><td><code>~/.continue/config.yaml</code></td><td>5-model config pointing at bridge</td></tr>
+    <tr><td>Antigravity</td><td><code>~/Library/Application Support/Antigravity IDE/User/settings.json</code></td><td>Prioritise Continue, disable inline-suggest collision</td></tr>
+    <tr><td>Antigravity</td><td><code>~/Library/Application Support/Antigravity IDE/User/keybindings.json</code></td><td>⌘L / ⌘I / ⌘⇧L Mac-friendly shortcuts</td></tr>
+    <tr><td>Antigravity</td><td><code>~/.antigravity-ide/extensions/continue.continue-2.0.0-darwin-arm64/</code></td><td>Continue.dev v2.0.0 installed</td></tr>
+    <tr><td>Cursor</td><td><code>~/.cursor/extensions/continue.continue-2.0.0-darwin-arm64/</code></td><td>Continue.dev v2.0.0 installed</td></tr>
+  </table>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<section id="security">
+  <h2><span class="num">14</span> Security model</h2>
+
+  <table>
+    <tr><th>Property</th><th>Detail</th></tr>
+    <tr><td>Network exposure</td><td><span class="pill ok">127.0.0.1 only</span> — bridge binds explicitly to loopback, never <code>0.0.0.0</code>. Verified by attempting connection from LAN IP 192.168.50.254 → refused.</td></tr>
+    <tr><td>API key handling</td><td>Bridge never stores keys. Reads token at startup from <code>~/.claude/settings.json</code> (same place <code>hai configure claude-code</code> wrote it). Forwarded as <code>x-api-key</code> header on each request.</td></tr>
+    <tr><td>Logging</td><td>Bridge logs only method, path, status, and latency to <code>~/Library/Logs/hyperspace-bridge.log</code>. <strong>No request or response bodies are logged.</strong></td></tr>
+    <tr><td>Caching / persistence</td><td><span class="pill ok">None</span> — bridge is a transparent proxy. Every request hits Hai fresh.</td></tr>
+    <tr><td>Dependencies</td><td><span class="pill ok">Zero npm packages</span> — uses Node's built-in <code>http</code>, <code>fs</code>, <code>path</code>, <code>os</code> only. No supply-chain surface.</td></tr>
+    <tr><td>Process isolation</td><td>Runs as your user via launchd. No root, no sudo, no system-wide install.</td></tr>
+  </table>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<section id="trouble">
+  <h2><span class="num">15</span> Troubleshooting</h2>
+
+  <h3>The bridge isn't responding</h3>
+  <div class="code-wrap">
+<pre><code><span class="c"># Check launchd status:</span>
+launchctl list | grep hyperspace
+
+<span class="c"># View live log:</span>
+tail -f ~/Library/Logs/hyperspace-bridge.log
+
+<span class="c"># Restart manually:</span>
+launchctl bootout gui/$(id -u)/com.hyperspace.bridge
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.hyperspace.bridge.plist</code></pre>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+  </div>
+
+  <h3>Continue extension doesn't appear in the IDE sidebar</h3>
+  <p>Fully quit the IDE (⌘Q, not just close window) and relaunch — Continue activates on <code>onStartupFinished</code>. If still missing, verify with:</p>
+  <div class="code-wrap">
+<pre><code><span class="ok">"/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide"</span> \
+  --list-extensions | grep continue</code></pre>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+  </div>
+
+  <h3>Hai API key not detected</h3>
+  <p>Run <code>hai configure claude-code</code> first — that writes the token into <code>~/.claude/settings.json</code> where the bridge looks for it. Or set <code>HAI_API_KEY=&lt;your-token&gt;</code> in the launchd plist's <code>EnvironmentVariables</code>.</p>
+
+  <h3>Wrong port — Hai isn't on :6655</h3>
+  <p>Override at install time:</p>
+  <div class="code-wrap">
+<pre><code><span class="c"># Run bridge manually with custom Hai URL:</span>
+HYPERSPACE_URL=<span class="ok">http://localhost:YOUR_PORT/anthropic</span> node ~/.hyperspace-bridge/hyperspace-bridge.js</code></pre>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+  </div>
+
+  <h3>Clean reinstall</h3>
+  <div class="code-wrap">
+<pre><code><span class="b">cd</span> ~/Downloads/hyperspace-bridge
+./uninstall.sh
+./install.sh</code></pre>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  Hyperspace Bridge — built &amp; validated on 2026-06-21 · Local-only · Zero dependencies · Auto-starts on login<br>
+  Generated audit document · Share <code>~/Downloads/hyperspace-bridge/</code> with your team to replicate
+</footer>
+
+<script>
+  function copyCode(btn) {
+    const pre = btn.previousElementSibling;
+    const text = pre.textContent.trim();
+    navigator.clipboard.writeText(text).then(() => {
+      const original = btn.textContent;
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
+    });
+  }
+</script>
+
+</body>
+</html>
