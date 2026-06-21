@@ -172,7 +172,94 @@ This stops the bridge, removes the launchd agent, and removes `~/.hyperspace-bri
 
 ---
 
-## Tavily web search — live data in Agent mode
+## After installation — first steps
+
+After `./install.sh` completes successfully, open your IDE. Here's exactly what to do in each one.
+
+---
+
+### Antigravity IDE
+
+**Step 1 — Look for the Continue icon in the left sidebar**
+
+After installation and restarting Antigravity, a small cube icon (Continue) appears in the left activity bar.
+
+**Step 2 — Click the Continue icon → chat opens on the left panel**
+
+![Antigravity IDE with Continue](assets/antigravity.png)
+
+**Step 3 — Select a model**
+
+At the bottom of the Continue panel, click the model name to open the picker. Choose from:
+- **Claude Sonnet (Hyperspace)** — recommended, best balance
+- **Claude Haiku (Hyperspace)** — faster, lighter tasks
+- **Claude Opus (Hyperspace)** — strongest reasoning
+- **Claude Sonnet (OpenAI path)** — same model, alternate route
+
+**Step 4 — Set mode to Agent**
+
+Click `Agent` in the bottom toolbar (next to the model name). Agent mode can read files, run commands, search the web, and apply code changes.
+
+**Shortcut:** `⌘L` to open Continue at any time.
+
+> **Status bar:** You will see green `Hyperspace` text at the very bottom right of the window when the bridge is connected. `✓ Continue (NE)` confirms Continue is active.
+
+---
+
+### Cursor
+
+**Step 1 — Look for the Continue icon (cube) in the left sidebar activity bar**
+
+After installation and restarting Cursor, the Continue cube icon appears on the left.
+
+**Step 2 — Click it → Continue chat panel opens on the left**
+
+![Cursor with Continue](assets/cursor.png)
+
+> **Note:** Cursor also has its own native "Agent" panel on the right side (with "New Agent", "Automations"). **Ignore that panel** — it's Cursor's cloud service with usage limits. Use the **Continue panel on the left** which routes through your Hyperspace proxy.
+
+**Step 3 — Select a model from the picker**
+
+Click the model name at the bottom → choose Claude Sonnet, Haiku, or Opus via Hyperspace.
+
+**Step 4 — Set mode to Agent**
+
+Click `Agent` in the toolbar for full capabilities.
+
+**Shortcut:** `⌘⇧L` to open Continue.
+
+> **Status bar:** Green `Hyperspace` text appears at the bottom right next to `✓ Continue (NE)` when connected.
+
+---
+
+### Zed
+
+**Step 1 — Open the Assistant panel**
+
+Press `⌘?` — the AI assistant opens on the right.
+
+**Step 2 — Select a Hyperspace model**
+
+Click the model name at the bottom right of the panel → the picker shows all Hyperspace models.
+
+![Zed Assistant with Hyperspace models](assets/zed.png)
+
+Available models under **Ollama**:
+- `Claude (via Hyperspace)` — recommended
+- `claude-haiku-latest`
+- `claude-opus-latest`
+- `claude-sonnet-latest`
+- `hyperspace` (alias for Sonnet)
+
+**Step 3 — Chat**
+
+Type your question and press Enter. Zed's assistant streams Claude responses directly with no extension or sidebar needed.
+
+> **Note:** Zed uses its native Ollama integration — no Continue extension required. Just configure `~/.config/zed/settings.json` as shown in the Zed section below.
+
+---
+
+
 
 By default Claude has no real-time data. **Tavily** gives Claude live internet access inside Continue's Agent mode — weather, news, documentation lookups, anything time-sensitive.
 
