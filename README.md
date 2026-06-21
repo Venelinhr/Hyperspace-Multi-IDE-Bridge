@@ -14,6 +14,10 @@
 
 The **Hyperspace Bridge** is a small local server that makes Claude available inside your IDE. It sits between your IDE and the Hyperspace (Hai) proxy, translating requests so that any editor which speaks to a local AI can use Claude through your existing Hyperspace setup — with zero manual configuration.
 
+> **Analogy:** Think of it as a power adapter when travelling. Your laptop plug (the IDE) is one shape, the wall socket (Hyperspace) is another shape. The bridge is the adapter — nothing changes about the laptop or the wall.
+
+Once running, **ANY local AI tool** that speaks Ollama or OpenAI auto-detects your Hyperspace setup as if it were a local Ollama server. No more cloud SaaS lock-in to Cursor/Copilot/etc. — your editor uses Claude through your own corporate proxy, with proper licensing and zero data leak risk.
+
 ---
 
 ## How it works — architecture & data flow
@@ -41,22 +45,49 @@ The bridge exposes two local endpoints:
 
 Both ports bind to `127.0.0.1` only — not reachable from your network.
 
+### Auto-detection of your Hai API key
+
+The bridge looks for your `ANTHROPIC_AUTH_TOKEN` in this order:
+
+1. `$HAI_API_KEY` environment variable (if set)
+2. `$ANTHROPIC_AUTH_TOKEN` environment variable (if set)
+3. `~/.claude/settings.json` → `env.ANTHROPIC_AUTH_TOKEN` (where `hai configure claude-code` writes it)
+
+If `hai configure claude-code` has been run — which is the standard Hyperspace setup — the key is already in place and the bridge picks it up automatically.
+
 ---
 
 ## What is Continue.dev?
 
-**Continue** ([continue.dev](https://continue.dev)) is an open-source AI coding assistant that runs as an extension inside your IDE. Think of it as a chat panel + autocomplete + inline-edit tool that lives alongside your code.
+**Continue** ([continue.dev](https://continue.dev)) is an open-source AI coding assistant that runs as an extension inside your IDE — a chat panel + autocomplete + inline-edit tool that lives alongside your code.
 
-The key thing that makes Continue right for this setup: **you choose where its AI comes from.** Unlike Cursor's built-in chat (locked to Cursor's cloud) or Antigravity's Agent (locked to Google's Cloud Code), Continue lets you point it at any AI provider — including the local Hyperspace Bridge.
+The key difference: **you choose where its AI comes from.** Unlike Cursor's built-in chat (locked to Cursor's cloud) or Antigravity's Agent (locked to Google's Cloud Code), Continue lets you point it at any AI provider — including the local Hyperspace Bridge.
+
+### How Continue knows about Hyperspace
+
+Continue is configured via `~/.continue/config.yaml`:
+
+```yaml
+models:
+  - name: Claude Sonnet (Hyperspace)
+    provider: ollama              # ← Continue speaks Ollama protocol
+    model: claude-sonnet-latest
+    apiBase: http://localhost:11434   # ← talks to YOUR bridge
+    roles: [chat, edit, apply]
+```
+
+Continue thinks it's talking to a local Ollama server. The bridge is pretending to be Ollama. Hai is what actually returns Claude responses. Continue doesn't know or care — it just sees a working backend.
+
+> **In one sentence:** Continue is the AI sidebar inside your IDE that we pointed at the Hyperspace Bridge — so when you press ⌘L in Antigravity, Claude responds via your corporate Hai proxy instead of via Google's cloud.
 
 ### Why we use it for Antigravity and Cursor
 
-Both Antigravity IDE and Cursor **hard-wire their built-in AI to their own cloud**. There is no setting to redirect them to a local proxy. Continue.dev sidesteps this — it runs as a regular extension inside the IDE, uses its own AI pipeline, and that pipeline is fully configurable via `~/.continue/config.yaml`.
+Both Antigravity IDE and Cursor **hard-wire their built-in AI to their own cloud**. There is no setting to redirect them to a local proxy. Continue.dev sidesteps this — it runs as a regular extension inside the IDE, uses its own AI pipeline, and that pipeline is fully configurable.
 
 | IDE | Built-in AI | What we use instead |
 |---|---|---|
 | **Cursor** | cursor.sh cloud (quota-limited) | Continue sidebar (⌘⇧L) |
-| **Antigravity IDE** | Google Cloud Code Assist (gRPC) | Continue sidebar (⌘L) |
+| **Antigravity IDE** | Google Cloud Code Assist (gRPC, closed) | Continue sidebar (⌘L) |
 | **Zed** | ✅ Native Ollama support | Built-in, no extension needed |
 
 ---
@@ -68,6 +99,7 @@ Both Antigravity IDE and Cursor **hard-wire their built-in AI to their own cloud
 | **Open source** | Apache 2.0 license — no SaaS subscription, no per-seat cost |
 | **Same config everywhere** | One `~/.continue/config.yaml` works in Cursor, Antigravity, Zed, VS Code, JetBrains |
 | **No data leaves your Mac** | All traffic goes through your existing Hyperspace proxy — same path as Claude Code in Terminal |
+| **No data stored** | The bridge is stateless — every request is translated and forwarded live. Nothing is cached, saved, or written to disk. |
 | **Tool use / Agent mode** | Claude can read files, run terminal commands, apply patches across multiple files |
 | **One-command install** | `./install.sh` detects everything and sets it all up — no manual steps |
 | **Auto-starts on login** | launchd keeps the bridge running — nothing to babysit |
@@ -167,15 +199,24 @@ When the bridge is running, a green **"Hyperspace"** label appears in the IDE st
 
 ---
 
-## IDE Configuration
+## IDE Compatibility
 
-### Cursor / Antigravity IDE
-The installer handles everything automatically.
-- Open Continue: **⌘⇧L** (Cursor) · **⌘L** (Antigravity)
-- Switch to **Agent** mode in the toolbar for full capabilities
+### Cursor
+**Method:** Continue.dev extension · **Shortcut:** ⌘⇧L
+
+Cursor's native Agent panel ("New Agent / Automations") routes through `cursor.sh` — this cannot be redirected. The bridge provides a full alternative via Continue's sidebar with equivalent capabilities (file edits, terminal, multi-file diffs, web search).
+
+### Antigravity IDE
+**Method:** Continue.dev extension · **Shortcut:** ⌘L
+
+Antigravity's built-in Agent uses Google Cloud Code Assist via gRPC with proprietary Protobuf schemas — a completely different protocol that cannot be redirected. Continue provides equivalent functionality.
+
+> Note: Antigravity's native Agent already uses Claude Sonnet 4.6 via Google's hosted Claude. If you prefer to use that instead, it works independently of the bridge.
 
 ### Zed
-Add to `~/.config/zed/settings.json`:
+**Method:** Native `language_models.ollama` config · **Shortcut:** ⌘?
+
+Zed has first-class support for Ollama. Add to `~/.config/zed/settings.json`:
 ```json
 "language_models": {
   "ollama": {
@@ -193,22 +234,18 @@ Add to `~/.config/zed/settings.json`:
   "default_model": { "provider": "ollama", "model": "hyperspace" }
 }
 ```
-Open Assistant: **⌘?** → pick "Claude (via Hyperspace)"
 
-### Any tool with a custom AI endpoint
+### Any tool with a custom AI endpoint ✅
 
 Any tool that lets you set an Ollama URL or OpenAI base URL works with the bridge:
 
 ```bash
-# OpenAI-compatible tools
+# OpenAI-compatible tools (CLI, scripts, etc.)
 export OPENAI_BASE_URL=http://localhost:11435/v1
 export OPENAI_API_KEY=sk-not-needed
-
-# Ollama-compatible tools
-# Point at: http://localhost:11434
 ```
 
-**Examples:** JetBrains AI Assistant, Helix, Neovim plugins (`llm.nvim`, `codecompanion.nvim`), CLI tools — point them at `localhost:11434` (Ollama) or `http://localhost:11435/v1` (OpenAI). The bridge handles them all. ✅
+**Examples:** JetBrains AI Assistant, Helix, Neovim plugins (`llm.nvim`, `codecompanion.nvim`), CLI tools — point them at `localhost:11434` (Ollama) or `http://localhost:11435/v1` (OpenAI). The bridge handles them all.
 
 ---
 
